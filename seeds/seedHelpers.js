@@ -17,7 +17,7 @@ module.exports.descriptors = [
     'Sky',
     'Dusty',
     'Diamond'
-]
+];
 module.exports.places = [
     'Flats',
     'Village',
