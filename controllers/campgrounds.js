@@ -1,5 +1,8 @@
+const axios = require('axios');
 const Campground = require('../models/campground');
+const geoAPIKey = process.env.GEO_API_KEY;
 const { cloudinary } = require('../cloudinary');
+const campground = require('../models/campground');
 
 module.exports.index = async (req, res) => {
   const campgrounds = await Campground.find({});
@@ -11,9 +14,13 @@ module.exports.renderNewForm = (req, res) => {
 };
 
 module.exports.createCampground = async (req, res, next) => {
+  // Fetch Campground Location
+  const locationCords = await axios.get(`https://api.geoapify.com/v1/geocode/search?text=${req.body.campground.location}&apiKey=${geoAPIKey}`);
+  const { features: [{ geometry }] } = locationCords.data;
   const campground = new Campground(req.body.campground);
   campground.images = req.files.map(f => ({ url: f.path, filename: f.filename }));
   campground.author = req.user._id;
+  campground.geometry = geometry;
   await campground.save();
   console.log(campground);
   req.flash('success', 'Successfully made a new campground!');
