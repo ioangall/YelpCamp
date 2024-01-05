@@ -2,6 +2,8 @@ if (process.env.NODE_ENV !== 'production') {
    require('dotenv').config();
 };
 
+const cloudinaryName = process.env.CLOUDINARY_CLOUD_NAME;
+
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
@@ -14,6 +16,7 @@ const methodOverride = require('method-override');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user');
+const helmet = require('helmet');
 const app = express();
 
 const mongoSanitize = require('express-mongo-sanitize');
@@ -54,6 +57,52 @@ const sessionConfig = {
 app.use(session(sessionConfig));
 app.use(flash());
 
+const scriptSrcUrls = [
+   "https://stackpath.bootstrapcdn.com",
+   "https://kit.fontawesome.com",
+   "https://cdnjs.cloudflare.com",
+   "https://cdn.jsdelivr.net",
+   "https://unpkg.com/"
+];
+const styleSrcUrls = [
+   "https://kit-free.fontawesome.com",
+   "https://stackpath.bootstrapcdn.com",
+   "https://fonts.googleapis.com",
+   "https://cdn.jsdelivr.net",
+   "https://use.fontawesome.com",
+   "https://unpkg.com/"
+];
+const connectSrcUrls = [
+   "https://unpkg.com/"
+];
+const fontSrcUrls = [];
+
+app.use(
+   helmet.contentSecurityPolicy({
+      directives: {
+         defaultSrc: [],
+         connectSrc: ["'self'", ...connectSrcUrls],
+         scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+         styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+         workerSrc: ["'self'", "blob:"],
+         childSrc: ["blob:"],
+         objectSrc: [],
+         imgSrc: [
+            "'self'",
+            "blob:",
+            "data:",
+            `https://res.cloudinary.com/${cloudinaryName}/`, //SHOULD MATCH YOUR CLOUDINARY ACCOUNT! 
+            "https://images.unsplash.com",
+            "https://unpkg.com/",
+            "https://*.tile.openstreetmap.org/",
+            "https://*.tile.osm.org/",
+            "http://*.tile.osm.org/"
+         ],
+         fontSrc: ["'self'", ...fontSrcUrls],
+      },
+   })
+);
+
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
@@ -90,4 +139,4 @@ app.use((err, req, res, next) => {
 
 app.listen('3000', () => {
    console.log('Serving on port 3000');
-});
+});;
