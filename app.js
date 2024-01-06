@@ -9,6 +9,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const catchAsync = require('./utils/catchAsync');
 const ExpressError = require('./utils/ExpressError');
@@ -25,7 +26,9 @@ const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 
-mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp')
+const dbURL = 'mongodb://127.0.0.1:27017/yelp-camp';
+mongoose.connect(dbURL)
+   // mongoose.connect('mongodb://127.0.0.1:27017/yelp-camp')
    .then(() => {
       console.log('Connection successful!');
    })
@@ -42,7 +45,20 @@ app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(mongoSanitize({ replaceWith: '_' }));
 
+const store = MongoStore.create({
+   mongoUrl: dbURL,
+   touchAfter: 24 * 60 * 60,
+   crypto: {
+      secret: 'thisshouldbeabettersecret'
+   }
+});
+
+store.on('error', function (e) {
+   console.log('SESSION STORE ERROR!', e);
+});
+
 const sessionConfig = {
+   store,
    name: 'session',
    secret: 'thisshouldbeabettersecret',
    resave: false,
@@ -53,6 +69,7 @@ const sessionConfig = {
       maxAge: 1000 * 60 * 60 * 24
    }
 };
+
 
 app.use(session(sessionConfig));
 app.use(flash());
